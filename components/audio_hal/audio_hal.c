@@ -29,7 +29,8 @@
 
 #include "audio_mem.h"
 #include "audio_mutex.h"
-#include "es8374.h"
+//#include "es8374.h"
+#include "C:\Users\Vincent\Thymio3\workspace_eclipse\thymio3-firmware-esp32-eclipse\main\es8374.h"
 #include "es8388.h"
 #include "zl38063.h"
 
@@ -62,12 +63,12 @@ static struct audio_hal audio_hal_codecs_default[] = {
         .audio_codec_get_volume = es8388_get_voice_volume,
     },
     {
-        .audio_codec_initialize = es8374_init,
-        .audio_codec_deinitialize = es8374_deinit,
-        .audio_codec_ctrl = es8374_ctrl_state,
-        .audio_codec_config_iface = es8374_config_i2s,
-        .audio_codec_set_volume = es8374_set_voice_volume,
-        .audio_codec_get_volume = es8374_get_voice_volume,
+        .audio_codec_initialize = ES8374_Init,            //es8374_init,
+        .audio_codec_deinitialize = ES8374_Deinit,        //es8374_deinit,
+        .audio_codec_ctrl = ES8374_ControlState,          //es8374_ctrl_state,
+        .audio_codec_config_iface = ES8374_ConfigureI2S,  //es8374_config_i2s,
+        .audio_codec_set_volume = ES8374_SetVoiceVolume,  //es8374_set_voice_volume,
+        .audio_codec_get_volume = ES8374_GetVoiceVolume,  //es8374_get_voice_volume,
     },
     {
         .audio_codec_initialize = zl38063_init,

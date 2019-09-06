@@ -295,7 +295,7 @@ audio_element_handle_t i2s_stream_init(i2s_stream_cfg_t *config)
     i2s_driver_install(i2s->config.i2s_port, &i2s->config.i2s_config, 0, NULL);
 
     if ((config->i2s_config.mode & I2S_MODE_DAC_BUILT_IN) != 0) {
-        i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+        i2s_set_dac_mode(I2S_DAC_CHANNEL_RIGHT_EN);  // I2S_DAC_CHANNEL_BOTH_EN
     } else {
         i2s_set_pin(i2s->config.i2s_port, &i2s->config.i2s_pin_config);
     }
@@ -304,7 +304,7 @@ audio_element_handle_t i2s_stream_init(i2s_stream_cfg_t *config)
     if (i2s->config.i2s_port == 0) {
         SET_PERI_REG_BITS(PIN_CTRL, CLK_OUT1, 0, CLK_OUT1_S);
     }
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);  
+    //PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);  
 #endif
     
     return el;
