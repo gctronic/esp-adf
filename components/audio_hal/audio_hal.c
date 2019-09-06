@@ -29,6 +29,10 @@
 
 #include "audio_mem.h"
 #include "audio_mutex.h"
+//#include "es8374.h"
+#include "C:\Users\Vincent\Thymio3\workspace_eclipse\thymio3-firmware-esp32-eclipse\main\es8374.h"
+#include "es8388.h"
+#include "zl38063.h"
 
 static const char *TAG = "AUDIO_HAL";
 
@@ -38,7 +42,45 @@ static const char *TAG = "AUDIO_HAL";
         return b;\
     }
 
-audio_hal_handle_t audio_hal_init(audio_hal_codec_config_t *audio_hal_conf, audio_hal_func_t *audio_hal_func)
+struct audio_hal {
+    esp_err_t (*audio_codec_initialize)(audio_hal_codec_config_t *codec_cfg);
+    esp_err_t (*audio_codec_deinitialize)(void);
+    esp_err_t (*audio_codec_ctrl)(audio_hal_codec_mode_t mode, audio_hal_ctrl_t ctrl_state);
+    esp_err_t (*audio_codec_config_iface)(audio_hal_codec_mode_t mode, audio_hal_codec_i2s_iface_t *iface);
+    esp_err_t (*audio_codec_set_volume)(int volume);
+    esp_err_t (*audio_codec_get_volume)(int *volume);
+    xSemaphoreHandle audio_hal_lock;
+    void *handle;
+};
+
+static struct audio_hal audio_hal_codecs_default[] = {
+    {
+        .audio_codec_initialize = es8388_init,
+        .audio_codec_deinitialize = es8388_deinit,
+        .audio_codec_ctrl = es8388_ctrl_state,
+        .audio_codec_config_iface = es8388_config_i2s,
+        .audio_codec_set_volume = es8388_set_voice_volume,
+        .audio_codec_get_volume = es8388_get_voice_volume,
+    },
+    {
+        .audio_codec_initialize = ES8374_Init,            //es8374_init,
+        .audio_codec_deinitialize = ES8374_Deinit,        //es8374_deinit,
+        .audio_codec_ctrl = ES8374_ControlState,          //es8374_ctrl_state,
+        .audio_codec_config_iface = ES8374_ConfigureI2S,  //es8374_config_i2s,
+        .audio_codec_set_volume = ES8374_SetVoiceVolume,  //es8374_set_voice_volume,
+        .audio_codec_get_volume = ES8374_GetVoiceVolume,  //es8374_get_voice_volume,
+    },
+    {
+        .audio_codec_initialize = zl38063_init,
+        .audio_codec_deinitialize = zl38063_deinit,
+        .audio_codec_ctrl = zl38063_ctrl_state,
+        .audio_codec_config_iface = zl38063_config_i2s,
+        .audio_codec_set_volume = zl38063_set_voice_volume,
+        .audio_codec_get_volume = zl38063_get_voice_volume,
+    }
+};
+
+audio_hal_handle_t audio_hal_init(audio_hal_codec_config_t *audio_hal_conf, int index)
 {
     esp_err_t ret = 0;
     audio_hal_handle_t audio_hal = (audio_hal_handle_t) audio_calloc(1, sizeof(audio_hal_func_t));
