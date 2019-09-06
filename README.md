@@ -8,9 +8,9 @@ Espressif Systems Audio Development Framework (ESP-ADF) is the official audio de
 
 ESP-ADF supports development of audio applications for the Espressif Systems [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip in the most comprehensive way. With ESP-ADF, you can easily add features, develop audio applications from simple to complex:
 
-- Music player or recorder supports audio formats such as MP3, AAC, FLAC, WAV, OGG, AMR, TS, EQ, Downmixer, Sonic, G.711, SPEEX ...
+- Music player or recorder supports audio formats such as MP3, AAC, FLAC, WAV, OGG, OPUS, AMR, TS, EQ, Downmixer, Sonic, ALC, G.711...
 - Play music from sources: HTTP, HLS(HTTP Live Streaming), SPIFFS, SDCARD,  A2DP-Source, A2DP-Sink, HFP ...
-- Integrate Media services such as: DLNA, WeChat ...
+- Integrate Media services such as: DLNA, VoIP ...
 - Internet Radio
 - Voice recognition and integration with online services such as Alexa, DuerOS, ...
 
@@ -22,7 +22,11 @@ As a general, the ESP-ADF features will be supported as shown below:
 
 ### Quick Start
 
-You need the ESP32-LyraT board and headphone connected, make sure you clone the project recursive:
+You need [stable version of ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/stable/versions.html) to provide the toolchain, the ESP32-LyraT board and headphone connected. 
+
+**Note:**  If this is your first exposure to ESP32 and ESP-IDF, proceed to [Getting Started](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/index.html) documentation.
+
+Clone the ESP-ADF repository, set up `ADF_PATH`, and then compile, flash and monitor applications in the same way as when working with ESP-IDF.
 
 ```
 git clone --recursive https://github.com/espressif/esp-adf.git
@@ -37,10 +41,10 @@ If you clone project without `--recursive` flag, please goto the `esp-adf` direc
 
 Espressif Systems has released a number of boards for ESP-ADF to develop ESP32 audio applications, including:
 
-| ESP32-LyraT Development Board | ESP32-LyraTD-MSC Development Board |
-|:----:|:----:|
-|  [<img src="docs/_static/esp32-lyrat-v4.2-side.jpg" width="400" alt ="ESP32-LyraT Development Board" align="center" />](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat.html)  |  [<img src="docs/_static/esp32-lyratd-msc-v2.2.jpg" width="380" alt ="ESP32-LyraTD-MSC Development Board" align="center" />](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyratd-msc.html)   |
-|  [Getting Started with ESP32-LyraT](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat.html)  | [Getting Started with ESP32-LyraTD-MSC](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyratd-msc.html) |
+| ESP32-LyraT Development Board | ESP32-LyraTD-MSC Development Board | ESP32-LyraT-Mini Development Board |
+|:----:|:----:|:----:|
+|  [<img src="docs/_static/esp32-lyrat-v4.2-side.jpg" width="400" alt ="ESP32-LyraT Development Board" align="center" />](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat.html)  |  [<img src="docs/_static/esp32-lyratd-msc-v2.2.jpg" width="380" alt ="ESP32-LyraTD-MSC Development Board" align="center" />](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyratd-msc.html)  |  [<img src="docs/_static/esp32-lyrat-mini-v1.2.png" width="380" alt ="ESP32-LyraT-Mini Development Board" align="center" />](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat-mini.html)  |
+|  [Getting Started with ESP32-LyraT](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat.html)  |  [Getting Started with ESP32-LyraTD-MSC](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat-mini.html)  |  [Getting Started with ESP32-LyraT-Mini](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat-mini.html)  |
 
 #### ESP32-LyraT
 
@@ -53,6 +57,7 @@ An open-source development board, supporting Espressif Systems’ ADF and featur
 * [ESP32-LyraT Schematic (PDF)](https://dl.espressif.com/dl/schematics/esp32-lyrat-v4.3-schematic.pdf)
 
 #### ESP32-LyraTD-MSC
+
 Designed for smart speakers and AI applications. Supports Acoustic Echo Cancellation (AEC), Automatic Speech Recognition (ASR), Wake-up Interrupt and Voice Interaction.
 
 [<div align="center"><img src="docs/_static/esp32-lyratd-msc-v2.2-a-top.png" width="740" alt ="ESP32-LyraTD-MSC Development Board Overview" align="center" /></div>](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyratd-msc.html)
@@ -60,7 +65,14 @@ Designed for smart speakers and AI applications. Supports Acoustic Echo Cancella
 * [Getting Started with ESP32-LyraTD-MSC](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyratd-msc.html)
 * [ESP32-LyraTD-MSC Schematic Lower Board A (PDF) ](https://dl.espressif.com/dl/schematics/ESP32-LyraTD-MSC_A_V2_2-1109A.pdf), [Upper Board B (PDF)](https://dl.espressif.com/dl/schematics/ESP32-LyraTD-MSC_B_V1_1-1109A.pdf)
 
-#### ESP-IDF
+#### ESP32-LyraT-Mini
+
+An open-source mono development board. Designed for connected smart speakers and smart-home audio applications.
+
+[<div align="center"><img src="docs/_static/esp32-lyrat-mini-v1.2-layout-overview.png" width="740" alt ="ESP32-LyraT-Mini Development Board Overview" align="center" /></div>](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat-mini.html)
+
+* [Getting Started with ESP32-LyraT-Mini](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/get-started-esp32-lyrat-mini.html)
+* [ESP32-LyraT-Mini Schematic (PDF) ](https://dl.espressif.com/dl/schematics/SCH_ESP32-LYRAT-MINI_V1.2_20190605.pdf)
 
 ESP-**A**DF is based on the application layer of ESP-**I**DF ([Espressif IoT Development Framework](https://github.com/espressif/esp-idf)). The `git clone` command, described under [Quick Start](#quick-start) above, automatically downloads specific version of the ESP-IDF alongside with ESP-ADF. Please take a look at [Get Started](https://docs.espressif.com/projects/esp-adf/en/latest/get-started/index.html)
 

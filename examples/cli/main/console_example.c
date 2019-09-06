@@ -310,22 +310,6 @@ static void cli_setup_wifi()
     esp_periph_start(set, wifi_handle);
 }
 
-static void cli_setup_sdcard()
-{
-    ESP_LOGI(TAG, "Start SdCard");
-    periph_sdcard_cfg_t sdcard_cfg = {
-        .root = "/sdcard",
-        .card_detect_pin = get_sdcard_intr_gpio(), // GPIO_NUM_34
-    };
-    esp_periph_handle_t sdcard_handle = periph_sdcard_init(&sdcard_cfg);
-    esp_periph_start(set, sdcard_handle);
-
-    while (!periph_sdcard_is_mounted(sdcard_handle)) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "sdcard mounting...");
-    }
-}
-
 static void cli_setup_console()
 {
     periph_console_cfg_t console_cfg = {
@@ -341,20 +325,15 @@ static void cli_setup_player(void)
     if (player ) {
         return ;
     }
-    esp_audio_cfg_t cfg = {
-        .in_stream_buf_size = 10 * 1024,
-        .out_stream_buf_size = 6 * 1024,
-        .evt_que = NULL,
-        .resample_rate = 0,
-        .hal = NULL,
-    };
-
-
+    esp_audio_cfg_t cfg = DEFAULT_ESP_AUDIO_CONFIG();
     audio_board_handle_t board_handle = audio_board_init();
-    cfg.hal = board_handle->audio_hal;
+    cfg.vol_handle = board_handle->audio_hal;
+    cfg.vol_set = (audio_volume_set)audio_hal_set_volume;
+    cfg.vol_get = (audio_volume_get)audio_hal_get_volume;
+    cfg.prefer_type = ESP_AUDIO_PREFER_MEM;
     cfg.evt_que = xQueueCreate(3, sizeof(esp_audio_state_t));
-    audio_hal_ctrl_codec(cfg.hal, AUDIO_HAL_CODEC_MODE_BOTH, AUDIO_HAL_CTRL_START);
     player = esp_audio_create(&cfg);
+    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_BOTH, AUDIO_HAL_CTRL_START);
     xTaskCreate(esp_audio_state_task, "player_task", 4096, cfg.evt_que, 1, NULL);
 
     // Create readers and add to esp_audio
@@ -446,7 +425,7 @@ void app_main(void)
     esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
     set = esp_periph_set_init(&periph_cfg);
 
-    cli_setup_sdcard();
+    audio_board_sdcard_init(set);
     cli_setup_wifi();
     cli_setup_player();
 

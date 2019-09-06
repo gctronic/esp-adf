@@ -147,10 +147,14 @@ void app_main(void)
         }
         /* Stop when the last pipeline element (i2s_stream_writer in this case) receives stop event */
         if (msg.source_type == AUDIO_ELEMENT_TYPE_ELEMENT && msg.source == (void *) i2s_stream_writer
-            && msg.cmd == AEL_MSG_CMD_REPORT_STATUS && (int) msg.data == AEL_STATUS_STATE_STOPPED) {
+            && msg.cmd == AEL_MSG_CMD_REPORT_STATUS
+            && (((int)msg.data == AEL_STATUS_STATE_STOPPED) || ((int)msg.data == AEL_STATUS_STATE_FINISHED))) {
             audio_pipeline_stop(pipeline);
+            audio_pipeline_wait_for_stop(pipeline);
+            audio_pipeline_terminate(pipeline);
+
             set_next_file_marker();
-            audio_pipeline_resume(pipeline);
+            audio_pipeline_run(pipeline);
         }
     }
 

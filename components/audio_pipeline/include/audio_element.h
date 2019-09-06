@@ -95,8 +95,9 @@ typedef enum {
     AEL_STATUS_STATE_RUNNING            = 12,
     AEL_STATUS_STATE_PAUSED             = 13,
     AEL_STATUS_STATE_STOPPED            = 14,
-    AEL_STATUS_MOUNTED                  = 15,
-    AEL_STATUS_UNMOUNTED                = 16,
+    AEL_STATUS_STATE_FINISHED           = 15,
+    AEL_STATUS_MOUNTED                  = 16,
+    AEL_STATUS_UNMOUNTED                = 17,
 } audio_element_status_t;
 
 typedef struct audio_element *audio_element_handle_t;
@@ -113,16 +114,16 @@ typedef struct {
  * @brief Audio Element informations
  */
 typedef struct {
-    int sample_rates;       /*!< Sample rates in Hz */
-    int channels;           /*!< Number of audio channel, mono is 1, stereo is 2 */
-    int bits;               /*!< Bit wide (8, 16, 24, 32 bits) */
-    int volume;             /*!< Volume in percent */
-    bool mute;              /*!< Mute */
-    int64_t byte_pos;       /*!< The current position (in bytes) being processed for an element */
-    int64_t total_bytes;    /*!< The total bytes for an element */
-    char *uri;              /*!< URI (optional) */
-    audio_codec_t codec_fmt;/*!< Music format (optional) */
-    audio_element_reserve_data_t reserve_data;/*!< This value is reserved for user use */
+    int sample_rates;                           /*!< Sample rates in Hz */
+    int channels;                               /*!< Number of audio channel, mono is 1, stereo is 2 */
+    int bits;                                   /*!< Bit wide (8, 16, 24, 32 bits) */
+    int volume;                                 /*!< Volume in percent */
+    bool mute;                                  /*!< Mute */
+    int64_t byte_pos;                           /*!< The current position (in bytes) being processed for an element */
+    int64_t total_bytes;                        /*!< The total bytes for an element */
+    char *uri;                                  /*!< URI (optional) */
+    audio_codec_t codec_fmt;                    /*!< Music format (optional) */
+    audio_element_reserve_data_t reserve_data;  /*!< This value is reserved for user use (optional) */
 } audio_element_info_t;
 
 #define AUDIO_ELEMENT_INFO_DEFAULT()    {   \
@@ -330,7 +331,7 @@ esp_err_t audio_element_stop(audio_element_handle_t el);
 
 /**
  * @brief      After the `audio_element_stop` function is called, the Element task will perform some abort procedures.
- *             This function will be blocked until Element Task has done and exit.
+ *             This function will be blocked (Time is DEFAULT_MAX_WAIT_TIME) until Element Task has done and exit.
  *
  * @param[in]  el    The audio element handle
  *
@@ -339,6 +340,19 @@ esp_err_t audio_element_stop(audio_element_handle_t el);
  *     - ESP_FAIL
  */
 esp_err_t audio_element_wait_for_stop(audio_element_handle_t el);
+
+/**
+ * @brief      After the `audio_element_stop` function is called, the Element task will perform some abort procedures.
+ *             The maximum amount of time should block waiting for Element task has stopped.
+ *
+ * @param[in]  el               The audio element handle
+ * @param[in]  ticks_to_wait    The maximum amount of time to wait for stop
+ *
+ * @return
+ *     - ESP_OK, Success
+ *     - ESP_FAIL, Timeout
+ */
+esp_err_t audio_element_wait_for_stop_ms(audio_element_handle_t el, TickType_t ticks_to_wait);
 
 /**
  * @brief      Request audio Element enter 'PAUSE' state.
@@ -566,6 +580,17 @@ esp_err_t audio_element_set_output_timeout(audio_element_handle_t el, TickType_t
 esp_err_t audio_element_reset_input_ringbuf(audio_element_handle_t el);
 
 /**
+ * @brief      Set element finish state
+ *
+ * @param[in]  el    The audio element handle
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t audio_element_finish_state(audio_element_handle_t el);
+
+/**
  * @brief      Reset outputbuffer.
  *
  * @param[in]  el    The audio element handle
@@ -682,6 +707,18 @@ esp_err_t audio_element_reset_state(audio_element_handle_t el);
 int audio_element_get_output_ringbuf_size(audio_element_handle_t el);
 
 /**
+ * @brief      Set Element output ringbuffer size.
+ *
+ * @param[in]  el       The audio element handle
+ * @param[in]  rb_size  Size of the ringbuffer
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t audio_element_set_output_ringbuf_size(audio_element_handle_t el, int rb_size);
+
+/**
  * @brief      Call this function to read data from multi input ringbuffer by given index.
  *
  * @param      el            The audio element handle
@@ -759,7 +796,6 @@ ringbuf_handle_t audio_element_get_multi_input_ringbuf(audio_element_handle_t el
  *     - Others ringbuf_handle_t
  */
 ringbuf_handle_t audio_element_get_multi_output_ringbuf(audio_element_handle_t el, int index);
-
 
 #ifdef __cplusplus
 }

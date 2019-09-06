@@ -165,6 +165,9 @@ int rb_read(ringbuf_handle_t rb, char *buf, int buf_len, TickType_t ticks_to_wai
              * Note that, when we have buf_len bytes available in rb, we still read those irrespective of if it's multiple of 4.
              */
             read_size = read_size & 0xfffffffc;
+            if ((read_size == 0) && rb->is_done_write) {
+                read_size = rb->fill_cnt;
+            }
         } else {
             read_size = buf_len;
         }
@@ -186,6 +189,7 @@ int rb_read(ringbuf_handle_t rb, char *buf, int buf_len, TickType_t ticks_to_wai
                 ret_val = RB_TIMEOUT;
                 goto read_err;
             }
+            rb_release(rb->can_write);
             //wait till some data available to read
             if (rb_block(rb->can_read, ticks_to_wait) != pdTRUE) {
                 ret_val = RB_TIMEOUT;
@@ -223,7 +227,7 @@ read_err:
         rb_release(rb->can_write);
     }
     if ((ret_val == RB_FAIL) ||
-            (ret_val == RB_ABORT)) {
+        (ret_val == RB_ABORT)) {
         total_read_size = ret_val;
     }
     rb->unblock_reader_flag = false; /* We are anyway unblocking the reader */
@@ -263,7 +267,7 @@ int rb_write(ringbuf_handle_t rb, char *buf, int buf_len, TickType_t ticks_to_wa
                 ret_val = RB_ABORT;
                 goto write_err;
             }
-
+            rb_release(rb->can_read);
             //wait till we have some empty space to write
             if (rb_block(rb->can_write, ticks_to_wait) != pdTRUE) {
                 ret_val = RB_TIMEOUT;
@@ -297,7 +301,7 @@ write_err:
         rb_release(rb->can_read);
     }
     if ((ret_val == RB_FAIL) ||
-            (ret_val == RB_ABORT)) {
+        (ret_val == RB_ABORT)) {
         total_write_size = ret_val;
     }
     return total_write_size > 0 ? total_write_size : ret_val;

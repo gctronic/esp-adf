@@ -87,7 +87,7 @@ INPUT = \
     ../../components/esp_peripherals/include/periph_is31fl3216.h \
     ../../components/esp_peripherals/include/periph_adc_button.h \
     ## Audio HAL
-    ../../components/audio_hal/board/include/board.h \
+    ../../components/audio_board/include/board_pins_config.h \
     ../../components/audio_hal/driver/es8388/es8388.h \
     ../../components/audio_hal/driver/es8374/es8374.h \
     ../../components/audio_hal/driver/zl38063/zl38063.h \
@@ -96,11 +96,14 @@ INPUT = \
     ../../components/audio_sal/include/audio_mutex.h \
     ../../components/audio_sal/include/audio_mem.h \
     ## Services
-    ../../components/audio_service/include/bluetooth_service.h \
-    ../../components/audio_service/include/bt_keycontrol.h \
-    ## Deamon framwork
-    ../../components/esp_deamon/include/periph_service.h \
-    ../../components/esp_deamon/include/audio_service.h \
+    ../../components/bluetooth_service/include/bluetooth_service.h \
+    ../../components/bluetooth_service/include/bt_keycontrol.h \
+    ../../components/input_key_service/include/input_key_service.h \
+    ../../components/dueros_service/include/dueros_service.h \
+    ../../components/display_service/include/display_service.h \
+    ## Dispatcher framwork
+    ../../components/esp_dispatcher/include/periph_service.h \
+    ../../components/esp_dispatcher/include/audio_service.h \
     ../../components/display_service/include/display_service.h \
     ## Cloud Services
     ../../components/wifi_service/include/airkiss_config.h \
@@ -108,6 +111,13 @@ INPUT = \
     ../../components/wifi_service/include/smart_config.h \
     ../../components/wifi_service/include/esp_wifi_setting.h \
     ../../components/wifi_service/include/wifi_service.h \
+    ## Playlist
+    ../../components/playlist/include/dram_list.h \
+    ../../components/playlist/include/flash_list.h \
+    ../../components/playlist/include/partition_list.h \
+    ../../components/playlist/include/sdcard_list.h \
+    ../../components/playlist/include/playlist.h \
+    ../../components/playlist/include/sdcard_scan.h \
     ##
     ## Audio Player
     ##

@@ -31,9 +31,7 @@
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 
-#include "periph_touch.h"
 #include "esp_peripherals.h"
-#include "periph_sdcard.h"
 #include "periph_wifi.h"
 #include "periph_button.h"
 #include "board.h"
@@ -55,10 +53,10 @@
 #include "filter_resample.h"
 
 #include "display_service.h"
-#include "led_indicator.h"
 #include "wifi_service.h"
 #include "airkiss_config.h"
 #include "smart_config.h"
+#include "periph_adc_button.h"
 
 static const char *TAG              = "DUEROS";
 extern esp_audio_handle_t           player;
@@ -98,13 +96,44 @@ void rec_engine_cb(rec_event_type_t type, void *user_data)
     }
 }
 
+static  audio_element_handle_t raw_read;
+
+#ifdef CONFIG_ESP_LYRAT_MINI_V1_1_BOARD
+static esp_err_t recorder_pipeline_open_for_mini(void **handle)
+{
+    audio_element_handle_t i2s_stream_reader;
+    audio_pipeline_handle_t recorder;
+    audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
+    recorder = audio_pipeline_init(&pipeline_cfg);
+    if (NULL == recorder) {
+        return ESP_FAIL;
+    }
+    i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT();
+    i2s_cfg.i2s_port = 1;
+    i2s_cfg.i2s_config.use_apll = 0;
+    i2s_cfg.i2s_config.sample_rate = 16000;
+    i2s_cfg.i2s_config.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT;
+    i2s_cfg.type = AUDIO_STREAM_READER;
+    i2s_stream_reader = i2s_stream_init(&i2s_cfg);
+
+    raw_stream_cfg_t raw_cfg = RAW_STREAM_CFG_DEFAULT();
+    raw_cfg.type = AUDIO_STREAM_READER;
+    raw_read = raw_stream_init(&raw_cfg);
+
+    audio_pipeline_register(recorder, i2s_stream_reader, "i2s");
+    audio_pipeline_register(recorder, raw_read, "raw");
+
+    audio_pipeline_link(recorder, (const char *[]) {"i2s", "raw"}, 2);
+    audio_pipeline_run(recorder);
+    ESP_LOGI(TAG, "Recorder has been created");
+    *handle = recorder;
+    return ESP_OK;
+}
+#else
 static esp_err_t recorder_pipeline_open(void **handle)
 {
     audio_element_handle_t i2s_stream_reader;
     audio_pipeline_handle_t recorder;
-    audio_board_handle_t board_handle = audio_board_init();
-    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_BOTH, AUDIO_HAL_CTRL_START);
-
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
     recorder = audio_pipeline_init(&pipeline_cfg);
     if (NULL == recorder) {
@@ -130,7 +159,7 @@ static esp_err_t recorder_pipeline_open(void **handle)
 
     raw_stream_cfg_t raw_cfg = RAW_STREAM_CFG_DEFAULT();
     raw_cfg.type = AUDIO_STREAM_READER;
-    audio_element_handle_t raw_read = raw_stream_init(&raw_cfg);
+    raw_read = raw_stream_init(&raw_cfg);
 
     audio_pipeline_register(recorder, i2s_stream_reader, "i2s");
     audio_pipeline_register(recorder, filter, "filter");
@@ -141,10 +170,11 @@ static esp_err_t recorder_pipeline_open(void **handle)
     *handle = recorder;
     return ESP_OK;
 }
+#endif
 
 static esp_err_t recorder_pipeline_read(void *handle, char *data, int data_size)
 {
-    raw_stream_read(audio_pipeline_get_el_by_tag((audio_pipeline_handle_t)handle, "raw"), data, data_size);
+    raw_stream_read(raw_read, data, data_size);
     return ESP_OK;
 }
 
@@ -207,8 +237,9 @@ static esp_err_t duer_callback(audio_service_handle_t handle, service_event_t *e
                 break;
             }
         case SERVICE_STATE_CONNECTING: break;
-        case SERVICE_STATE_CONNECTED: break;
+        case SERVICE_STATE_CONNECTED:
             retry_num = 1;
+            break;
         case SERVICE_STATE_RUNNING: break;
         case SERVICE_STATE_STOPED: break;
         default:
@@ -283,6 +314,32 @@ esp_err_t periph_callback(audio_event_iface_msg_t *event, void *context)
                 }
                 break;
             }
+        case PERIPH_ID_ADC_BTN:
+            if (((int)event->data == get_input_volup_id()) && (event->cmd == PERIPH_ADC_BUTTON_RELEASE)) {
+                int player_volume = 0;
+                esp_audio_vol_get(player, &player_volume);
+                player_volume += 10;
+                if (player_volume > 100) {
+                    player_volume = 100;
+                }
+                esp_audio_vol_set(player, player_volume);
+                ESP_LOGI(TAG, "AUDIO_USER_KEY_VOL_UP [%d]", player_volume);
+            } else if (((int)event->data == get_input_voldown_id()) && (event->cmd == PERIPH_ADC_BUTTON_RELEASE)) {
+                int player_volume = 0;
+                esp_audio_vol_get(player, &player_volume);
+                player_volume -= 10;
+                if (player_volume < 0) {
+                    player_volume = 0;
+                }
+                esp_audio_vol_set(player, player_volume);
+                ESP_LOGI(TAG, "AUDIO_USER_KEY_VOL_DOWN [%d]", player_volume);
+            } else if (((int)event->data == get_input_play_id()) && (event->cmd == PERIPH_ADC_BUTTON_RELEASE)) {
+
+            } else if (((int)event->data == get_input_set_id()) && (event->cmd == PERIPH_ADC_BUTTON_RELEASE)) {
+                esp_audio_vol_set(player, 0);
+                ESP_LOGI(TAG, "AUDIO_USER_KEY_VOL_MUTE [0]");
+            }
+            break;
         default:
             break;
     }
@@ -292,6 +349,7 @@ esp_err_t periph_callback(audio_event_iface_msg_t *event, void *context)
 void duer_app_init(void)
 {
     esp_log_level_set("*", ESP_LOG_INFO);
+
     ESP_LOGI(TAG, "ADF version is %s", ADF_VER);
 
     esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
@@ -299,47 +357,10 @@ void duer_app_init(void)
     if (set != NULL) {
         esp_periph_set_register_callback(set, periph_callback, NULL);
     }
-    led_indicator_handle_t led = led_indicator_init((gpio_num_t)get_green_led_gpio());
-    display_service_config_t display = {
-        .based_cfg = {
-            .task_stack = 0,
-            .task_prio  = 0,
-            .task_core  = 0,
-            .task_func  = NULL,
-            .service_start = NULL,
-            .service_stop = NULL,
-            .service_destroy = NULL,
-            .service_ioctl = led_indicator_pattern,
-            .service_name = "DISPLAY_serv",
-            .user_data = NULL,
-        },
-        .instance = led,
-    };
-    disp_serv = display_service_create(&display);
 
-    periph_button_cfg_t btn_cfg = {
-        .gpio_mask = (1ULL << get_input_rec_id()) | (1ULL << get_input_mode_id()), //REC BTN & MODE BTN
-    };
-    esp_periph_handle_t button_handle = periph_button_init(&btn_cfg);
-    esp_periph_start(set, button_handle);
-
-    // If enabled, the touch will consume a lot of CPU.
-    periph_touch_cfg_t touch_cfg = {
-        .touch_mask = TOUCH_PAD_SEL4 | TOUCH_PAD_SEL7 | TOUCH_PAD_SEL8 | TOUCH_PAD_SEL9,
-        .tap_threshold_percent = 70,
-    };
-    esp_periph_handle_t touch_periph = periph_touch_init(&touch_cfg);
-    esp_periph_start(set, touch_periph);
-
-    periph_sdcard_cfg_t sdcard_cfg = {
-        .root = "/sdcard",
-        .card_detect_pin = get_sdcard_intr_gpio(), //GPIO_NUM_34
-    };
-    esp_periph_handle_t sdcard_handle = periph_sdcard_init(&sdcard_cfg);
-    esp_periph_start(set, sdcard_handle);
-    while (!periph_sdcard_is_mounted(sdcard_handle)) {
-        vTaskDelay(300 / portTICK_PERIOD_MS);
-    }
+    audio_board_key_init(set);
+    audio_board_sdcard_init(set);
+    disp_serv = audio_board_led_init();
 
     wifi_config_t sta_cfg = {0};
     strncpy((char *)&sta_cfg.sta.ssid, CONFIG_WIFI_SSID, strlen(CONFIG_WIFI_SSID));
@@ -372,7 +393,11 @@ void duer_app_init(void)
     eng.vad_off_delay_ms = 800;
     eng.wakeup_time_ms = 10 * 1000;
     eng.evt_cb = rec_engine_cb;
+#ifdef CONFIG_ESP_LYRAT_MINI_V1_1_BOARD
+    eng.open = recorder_pipeline_open_for_mini;
+#else
     eng.open = recorder_pipeline_open;
+#endif
     eng.close = recorder_pipeline_close;
     eng.fetch = recorder_pipeline_read;
     eng.extension = NULL;
@@ -383,7 +408,7 @@ void duer_app_init(void)
     xTimerHandle retry_login_timer = xTimerCreate("tm_duer_login", 1000 / portTICK_PERIOD_MS,
                                      pdFALSE, NULL, retry_login_timer_cb);
     duer_serv_handle = dueros_service_create();
-
+    duer_audio_wrapper_init();
     audio_service_set_callback(duer_serv_handle, duer_callback, retry_login_timer);
 
 }
