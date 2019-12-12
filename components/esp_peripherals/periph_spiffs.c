@@ -146,16 +146,19 @@ esp_err_t periph_spiffs_unmount(esp_periph_handle_t periph)
         spiffs->partition_label = strdup("/spiffs");
     }
 
+    ESP_LOGE(TAG, "Label = %s", spiffs->partition_label);
+
     int ret = esp_vfs_spiffs_unregister(spiffs->partition_label);
     if (ret == ESP_OK) {
         ESP_LOGD(TAG, "Unmount SPIFFS success");
         spiffs->is_mounted = false;
         return esp_periph_send_event(periph, SPIFFS_STATUS_UNMOUNTED, NULL, 0);
     } else {
-        esp_periph_send_event(periph, SPIFFS_STATUS_UNMOUNT_ERROR, NULL, 0);
+//        esp_periph_send_event(periph, SPIFFS_STATUS_UNMOUNT_ERROR, NULL, 0);
         ESP_LOGE(TAG, "Unmount SPIFFS error!");
         spiffs->is_mounted = false;
-        return ESP_FAIL;
+//        return ESP_FAIL;
+        return esp_periph_send_event(periph, SPIFFS_STATUS_UNMOUNTED, NULL, 0);
     }
     return ESP_OK;
 }
